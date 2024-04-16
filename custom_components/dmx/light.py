@@ -26,13 +26,11 @@ try:
         ATTR_BRIGHTNESS,
         ATTR_HS_COLOR,
         ATTR_TRANSITION,
-        ATTR_WHITE_VALUE,
         ATTR_COLOR_TEMP,
         LightEntity,
         PLATFORM_SCHEMA,
         SUPPORT_BRIGHTNESS,
         SUPPORT_COLOR,
-        SUPPORT_WHITE_VALUE,
         SUPPORT_TRANSITION,
         SUPPORT_COLOR_TEMP,
     )
@@ -41,13 +39,11 @@ except ImportError:
         ATTR_BRIGHTNESS,
         ATTR_HS_COLOR,
         ATTR_TRANSITION,
-        ATTR_WHITE_VALUE,
         ATTR_COLOR_TEMP,
         Light as LightEntity,
         PLATFORM_SCHEMA,
         SUPPORT_BRIGHTNESS,
         SUPPORT_COLOR,
-        SUPPORT_WHITE_VALUE,
         SUPPORT_TRANSITION,
         SUPPORT_COLOR_TEMP,
     )
@@ -65,6 +61,8 @@ _LOGGER = logging.getLogger(__name__)
 _last_command_ids = {}
 
 DATA_ARTNET = "light_dmx"
+ATTR_WHITE_VALUE = "white_value"
+SUPPORT_WHITE_VALUE = 128
 
 CONF_CHANNEL = "channel"
 CONF_DMX_CHANNELS = "dmx_channels"
@@ -225,8 +223,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-@asyncio.coroutine
-def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     host = config.get(CONF_HOST)
     universe = config.get(CONF_UNIVERSE)
     port = config.get(CONF_PORT)
@@ -494,8 +491,7 @@ class DMXLight(LightEntity, RestoreEntity):
     def fade_time(self, value):
         self._fade_time = value
 
-    @asyncio.coroutine
-    def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Instruct the light to turn on.
 
         Move to using one method on the DMX class to set/fade either a single
@@ -539,8 +535,7 @@ class DMXLight(LightEntity, RestoreEntity):
         )
         self.async_schedule_update_ha_state()
 
-    @asyncio.coroutine
-    def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Instruct the light to turn off.
 
         If a transition time has been specified in
@@ -651,8 +646,7 @@ class DMXGateway(object):
         if send_immediately:
             self.send()
 
-    @asyncio.coroutine
-    def set_channels_async(
+    async def set_channels_async(
         self, channels, value, transition=0, fps=40, send_immediately=True
     ):
         _last_command_ids[channels[0]] = random.randint(1, 1000000)
@@ -688,7 +682,7 @@ class DMXGateway(object):
                 self.send()
                 _LOGGER.debug(f"DMX update: {values_changed}")
 
-            yield from asyncio.sleep(1.0 / fps)
+            await asyncio.sleep(1.0 / fps)
 
             # Abort transition if new command has been sent
             if currently_exec_cmd_id != _last_command_ids[channels[0]]:
